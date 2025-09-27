@@ -1,45 +1,63 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { BlogHero } from "@/components/BlogHero";
-import { BlogCard, BlogPost } from "@/components/BlogCard";
+import { BlogCard, type BlogPost } from "@/components/BlogCard";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { Navigation } from "@/components/Navigation";
 import { Input } from "@/components/ui/input";
-import { mockPosts, categories } from "@/data/mockData";
 import { Search } from "lucide-react";
+import { useBlog } from "@/context/blog-context";
+import { useToast } from "@/hooks/use-toast";
+import type { Post } from "@/lib/supabase";
 
 const Index = () => {
-  const [posts, setPosts] = useState<BlogPost[]>([]);
-  const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const { posts, categories, loading, fetchPosts, fetchCategories } = useBlog();
+  const { toast } = useToast();
+
+  // Transform posts to include UI-specific fields
+  const enhancedPosts = useMemo<BlogPost[]>(() => posts.map(post => ({
+    id: post.id,
+    title: post.title,
+    excerpt: post.excerpt || "",
+    content: post.content,
+    author: post.author?.full_name || "Anonymous",
+    category: post.category?.name || "Uncategorized",
+    publishedAt: post.created_at,
+    commentCount: 0, // This should be updated with actual comment count
+  })), [posts]);
+
+  const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>(enhancedPosts);
 
   useEffect(() => {
-    setPosts([...mockPosts]);
-    setFilteredPosts([...mockPosts]);
-  }, []);
+    const loadInitialData = async () => {
+      try {
+        await Promise.all([
+          fetchCategories(),
+          fetchPosts()
+        ]);
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load blog posts and categories.",
+        });
+      }
+    };
+
+    loadInitialData();
+  }, [fetchCategories, fetchPosts, toast]);
 
   useEffect(() => {
-    let filtered = [...posts];
-
-    // Filter by category
-    if (selectedCategory) {
-      filtered = filtered.filter(post => post.category === selectedCategory);
-    }
-
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(post => 
-        post.title.toLowerCase().includes(query) ||
-        post.excerpt.toLowerCase().includes(query) ||
-        post.author.toLowerCase().includes(query) ||
-        post.category.toLowerCase().includes(query) ||
-        post.content.toLowerCase().includes(query)
-      );
-    }
-
+    const filtered = enhancedPosts.filter(post => {
+      const matchesCategory = !selectedCategory || post.category === selectedCategory;
+      const matchesSearch = !searchQuery || 
+        post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        post.content.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    });
     setFilteredPosts(filtered);
-  }, [posts, selectedCategory, searchQuery]);
+  }, [enhancedPosts, selectedCategory, searchQuery]);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -73,7 +91,7 @@ const Index = () => {
           </div>
           
           <CategoryFilter 
-            categories={categories}
+            categories={categories.map(cat => ({ id: cat.id, name: cat.name }))}
             selectedCategory={selectedCategory}
             onCategorySelect={handleCategorySelect}
           />
@@ -124,15 +142,15 @@ const Index = () => {
             <h2 className="section-title text-center mb-8">Explore by Category</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {categories.map((category) => {
-                const postsInCategory = posts.filter(post => post.category === category).length;
+                const postsInCategory = posts.filter(post => post.category_id === category.id).length;
                 return (
                   <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
+                    key={category.id}
+                    onClick={() => setSelectedCategory(category.id)}
                     className="p-4 bg-card border border-border rounded-lg hover:bg-card-hover transition-all duration-200 text-center group"
                   >
                     <h3 className="font-semibold text-card-foreground mb-1 group-hover:text-primary transition-colors">
-                      {category}
+                      {category.name}
                     </h3>
                     <p className="text-sm text-muted-foreground">
                       {postsInCategory} {postsInCategory === 1 ? 'post' : 'posts'}

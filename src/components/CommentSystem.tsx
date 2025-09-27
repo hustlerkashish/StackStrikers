@@ -1,170 +1,99 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { MessageCircle, User, Calendar } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-
-export interface Comment {
-  id: string;
-  author: string;
-  content: string;
-  createdAt: string;
-  postId: string;
-}
+import { Avatar } from "@/components/ui/avatar";
+import { Trash2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import type { Comment } from "@/lib/supabase";
 
 interface CommentSystemProps {
-  postId: string;
-  comments: Comment[];
-  onAddComment: (comment: Omit<Comment, "id" | "createdAt">) => void;
+  comments: (Comment & { user?: { full_name: string } })[];
+  onCommentSubmit: (content: string) => Promise<void>;
+  onCommentDelete: (id: string) => Promise<void>;
+  currentUserId?: string;
 }
 
-export const CommentSystem = ({ postId, comments, onAddComment }: CommentSystemProps) => {
-  const [author, setAuthor] = useState("");
+export function CommentSystem({
+  comments,
+  onCommentSubmit,
+  onCommentDelete,
+  currentUserId,
+}: CommentSystemProps) {
   const [content, setContent] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { toast } = useToast();
+  const [submitting, setSubmitting] = useState(false);
+  const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Input validation
-    if (!author.trim()) {
-      toast({
-        title: "Name required",
-        description: "Please enter your name",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (!content.trim()) {
-      toast({
-        title: "Comment required", 
-        description: "Please enter a comment",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!content.trim() || !user) return;
 
-    // Check for duplicate comments (same author and content)
-    const isDuplicate = comments.some(
-      comment => comment.author.toLowerCase() === author.toLowerCase().trim() && 
-                comment.content.toLowerCase() === content.toLowerCase().trim()
-    );
-
-    if (isDuplicate) {
-      toast({
-        title: "Duplicate comment",
-        description: "You've already posted this comment",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsSubmitting(true);
-    
     try {
-      await onAddComment({
-        author: author.trim(),
-        content: content.trim(),
-        postId,
-      });
-      
-      setAuthor("");
+      setSubmitting(true);
+      await onCommentSubmit(content);
       setContent("");
-      
-      toast({
-        title: "Comment posted!",
-        description: "Your comment has been added successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to post comment. Please try again.",
-        variant: "destructive",
-      });
     } finally {
-      setIsSubmitting(false);
+      setSubmitting(false);
     }
   };
 
-  return (
-    <section className="mt-12">
-      <div className="flex items-center gap-2 mb-6">
-        <MessageCircle className="w-6 h-6 text-primary" />
-        <h3 className="section-title">Comments ({comments.length})</h3>
-      </div>
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
 
-      {/* Comment Form */}
-      <Card className="p-6 mb-8 shadow-comment">
-        <h4 className="font-semibold mb-4">Leave a Comment</h4>
+  return (
+    <div className="space-y-8">
+      {user ? (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <Input
-            placeholder="Your name"
-            value={author}
-            onChange={(e) => setAuthor(e.target.value)}
-            maxLength={100}
-            required
-          />
           <Textarea
             placeholder="Write your comment..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            rows={4}
-            maxLength={1000}
-            required
-            className="resize-none"
+            className="min-h-[100px]"
           />
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-muted-foreground">
-              {content.length}/1000 characters
-            </span>
-            <Button 
-              type="submit" 
-              disabled={isSubmitting}
-              variant="success"
-            >
-              {isSubmitting ? "Posting..." : "Post Comment"}
-            </Button>
-          </div>
+          <Button type="submit" disabled={submitting || !content.trim()}>
+            {submitting ? "Posting..." : "Post Comment"}
+          </Button>
         </form>
-      </Card>
+      ) : (
+        <div className="p-4 border rounded-lg bg-muted">
+          <p>Please sign in to leave a comment.</p>
+        </div>
+      )}
 
-      {/* Comments List */}
       <div className="space-y-6">
-        {comments.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>No comments yet. Be the first to share your thoughts!</p>
-          </div>
-        ) : (
-          comments.map((comment) => (
-            <Card key={comment.id} className="p-6 shadow-comment">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                  <User className="w-5 h-5 text-primary" />
-                </div>
+        {comments.map((comment) => (
+          <div key={comment.id} className="flex space-x-4">
+            <Avatar className="h-10 w-10" />
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center justify-between">
                 <div>
-                  <h5 className="font-semibold text-card-foreground">{comment.author}</h5>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Calendar className="w-3 h-3" />
-                    {new Date(comment.createdAt).toLocaleDateString()} at{" "}
-                    {new Date(comment.createdAt).toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
-                  </div>
+                  <span className="font-semibold">
+                    {comment.user?.full_name || "Anonymous"}
+                  </span>
+                  <span className="text-muted-foreground ml-2 text-sm">
+                    {formatDate(comment.created_at)}
+                  </span>
                 </div>
+                {comment.user_id === currentUserId && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onCommentDelete(comment.id)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
-              <p className="blog-content text-card-foreground pl-13">
-                {comment.content}
-              </p>
-            </Card>
-          ))
+              <p className="text-foreground">{comment.content}</p>
+            </div>
+          </div>
+        ))
         )}
       </div>
-    </section>
+    </div>
   );
-};
+}

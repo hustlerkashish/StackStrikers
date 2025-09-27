@@ -1,9 +1,14 @@
 import { Button } from "@/components/ui/button";
 
+interface Category {
+  id: string;
+  name: string;
+}
+
 interface CategoryFilterProps {
-  categories: string[];
+  categories: Category[];
   selectedCategory: string | null;
-  onCategorySelect: (category: string | null) => void;
+  onCategorySelect: (categoryId: string | null) => void;
 }
 
 export const CategoryFilter = ({ categories, selectedCategory, onCategorySelect }: CategoryFilterProps) => {
@@ -19,13 +24,13 @@ export const CategoryFilter = ({ categories, selectedCategory, onCategorySelect 
       </Button>
       {categories.map((category) => (
         <Button
-          key={category}
-          variant={selectedCategory === category ? "default" : "category"}
+          key={category.id}
+          variant={selectedCategory === category.id ? "default" : "category"}
           size="sm"
-          onClick={() => onCategorySelect(category)}
+          onClick={() => onCategorySelect(category.id)}
           className="rounded-full"
         >
-          {category}
+          {category.name}
         </Button>
       ))}
     </div>

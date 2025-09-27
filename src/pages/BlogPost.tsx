@@ -1,42 +1,86 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CommentSystem, Comment } from "@/components/CommentSystem";
+import { CommentSystem } from "@/components/CommentSystem";
 import { Navigation } from "@/components/Navigation";
-import { BlogPost as BlogPostType } from "@/components/BlogCard";
-import { getPostById, getCommentsByPostId, addComment } from "@/data/mockData";
 import { ArrowLeft, Calendar, User, MessageCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { blogService } from "@/lib/blog-service";
+import { useAuth } from "@/hooks/use-auth";
+import type { Post, Comment } from "@/lib/supabase";
 
 export default function BlogPost() {
-  const { id } = useParams<{ id: string }>();
-  const [post, setPost] = useState<BlogPostType | null>(null);
+  const { slug } = useParams<{ slug: string }>();
+  const [post, setPost] = useState<Post | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (id) {
-      const foundPost = getPostById(id);
-      const postComments = getCommentsByPostId(id);
+    const loadPost = async () => {
+      if (!slug) return;
       
-      setPost(foundPost || null);
-      setComments(postComments);
-      setLoading(false);
-    }
-  }, [id]);
-
-  const handleAddComment = async (commentData: Omit<Comment, "id" | "createdAt">) => {
-    try {
-      const newComment = addComment(commentData);
-      setComments(prev => [...prev, newComment]);
-      
-      if (post) {
-        setPost(prev => prev ? { ...prev, commentCount: prev.commentCount + 1 } : null);
+      try {
+        setLoading(true);
+        const postData = await blogService.getPostBySlug(slug);
+        setPost(postData);
+        const commentsData = await blogService.getComments(postData.id);
+        setComments(commentsData);
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load the blog post.",
+        });
+        navigate("/");
+      } finally {
+        setLoading(false);
       }
+    };
+
+    loadPost();
+  }, [slug, toast, navigate]);
+
+  const handleCommentSubmit = async (content: string) => {
+    if (!user || !post) return;
+
+    try {
+      const newComment = await blogService.createComment({
+        content,
+        post_id: post.id,
+        user_id: user.id,
+      });
+      setComments((prev) => [...prev, newComment]);
+      toast({
+        title: "Success",
+        description: "Comment added successfully.",
+      });
     } catch (error) {
-      throw error; // Re-throw to let CommentSystem handle the error
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: (error as Error).message || "Failed to add comment.",
+      });
+    }
+  };
+
+  const handleCommentDelete = async (commentId: string) => {
+    try {
+      await blogService.deleteComment(commentId);
+      setComments((prev) => prev.filter((c) => c.id !== commentId));
+      toast({
+        title: "Success",
+        description: "Comment deleted successfully.",
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete comment.",
+      });
     }
   };
 
@@ -101,7 +145,7 @@ export default function BlogPost() {
           {/* Post Header */}
           <header className="mb-8">
             <Badge variant="secondary" className="mb-4">
-              {post.category}
+              {post.category?.name || 'Uncategorized'}
             </Badge>
             
             <h1 className="blog-title text-foreground mb-4">
@@ -111,11 +155,11 @@ export default function BlogPost() {
             <div className="flex items-center gap-6 text-muted-foreground">
               <span className="flex items-center gap-2">
                 <User className="w-4 h-4" />
-                {post.author}
+                {post.author?.full_name || 'Anonymous'}
               </span>
               <span className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                {new Date(post.publishedAt).toLocaleDateString('en-US', {
+                {new Date(post.created_at).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric'
@@ -123,50 +167,28 @@ export default function BlogPost() {
               </span>
               <span className="flex items-center gap-2">
                 <MessageCircle className="w-4 h-4" />
-                {post.commentCount} comments
+                {comments.length} comments
               </span>
             </div>
           </header>
 
-          {/* Featured Image */}
-          {post.imageUrl && (
-            <div className="mb-8 rounded-xl overflow-hidden">
-              <img 
-                src={post.imageUrl} 
-                alt={post.title}
-                className="w-full h-64 md:h-96 object-cover"
-              />
-            </div>
-          )}
-
-          {/* Post Content */}
-          <div className="prose prose-lg max-w-none mb-12 blog-content text-foreground">
-            {post.content.split('\n').map((paragraph, index) => {
-              if (paragraph.startsWith('# ')) {
-                return <h1 key={index} className="blog-title mt-8 mb-4">{paragraph.substring(2)}</h1>;
-              }
-              if (paragraph.startsWith('## ')) {
-                return <h2 key={index} className="post-title mt-6 mb-3">{paragraph.substring(3)}</h2>;
-              }
-              if (paragraph.startsWith('### ')) {
-                return <h3 key={index} className="section-title mt-4 mb-2">{paragraph.substring(4)}</h3>;
-              }
-              if (paragraph.startsWith('```')) {
-                return null; // Skip code block markers for now
-              }
-              if (paragraph.trim() === '') {
-                return <br key={index} />;
-              }
-              return <p key={index} className="mb-4">{paragraph}</p>;
-            })}
+          <div className="prose prose-lg dark:prose-invert max-w-none mb-8">
+            {post.content}
           </div>
 
-          {/* Comment System */}
-          <CommentSystem 
-            postId={post.id}
-            comments={comments}
-            onAddComment={handleAddComment}
-          />
+          <div className="mt-12">
+            <div className="flex items-center gap-2 mb-6">
+              <MessageCircle className="h-5 w-5" />
+              <h2 className="text-2xl font-semibold">Comments</h2>
+            </div>
+
+            <CommentSystem
+              comments={comments}
+              onCommentSubmit={handleCommentSubmit}
+              onCommentDelete={handleCommentDelete}
+              currentUserId={user?.id}
+            />
+          </div>
         </div>
       </article>
     </div>
