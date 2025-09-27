@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MessageCircle, User } from "lucide-react";
+import { Calendar, MessageCircle, User, Bookmark, MoreHorizontal } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export interface BlogPost {
@@ -13,6 +13,7 @@ export interface BlogPost {
   publishedAt: string;
   commentCount: number;
   imageUrl?: string;
+  readTime?: number;
 }
 
 interface BlogCardProps {
@@ -20,56 +21,77 @@ interface BlogCardProps {
 }
 
 export const BlogCard = ({ post }: BlogCardProps) => {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric',
+      year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+    });
+  };
+
   return (
-    <article className="blog-card rounded-xl overflow-hidden bg-card border border-border h-full flex flex-col">
-      {post.imageUrl && (
-        <div className="aspect-video overflow-hidden">
-          <img 
-            src={post.imageUrl} 
-            alt={post.title}
-            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-          />
-        </div>
-      )}
-      
-      <div className="p-6 flex-1 flex flex-col">
-        <div className="flex items-center gap-2 mb-3">
-          <Badge variant="secondary" className="text-xs">
-            {post.category}
-          </Badge>
-        </div>
-        
-        <h3 className="post-title text-card-foreground mb-3 line-clamp-2">
-          {post.title}
-        </h3>
-        
-        <p className="text-muted-foreground mb-4 flex-1 blog-content line-clamp-3">
-          {post.excerpt}
-        </p>
-        
-        <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <User className="w-4 h-4" />
-              {post.author}
-            </span>
-            <span className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
-              {new Date(post.publishedAt).toLocaleDateString()}
-            </span>
+    <article className="py-8 border-b border-gray-100 hover:bg-gray-50/50 transition-colors duration-200 cursor-pointer group">
+      <Link to={`/post/${post.id}`} className="block">
+        <div className="flex gap-8">
+          {/* Content */}
+          <div className="flex-1">
+            {/* Author and publication info */}
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center">
+                <span className="text-white text-xs font-medium">
+                  {post.author.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              <span className="text-sm text-gray-700 font-medium">{post.author}</span>
+              <span className="text-gray-400">·</span>
+              <span className="text-sm text-gray-500">{formatDate(post.publishedAt)}</span>
+            </div>
+            
+            {/* Title */}
+            <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2 group-hover:text-gray-700 transition-colors">
+              {post.title}
+            </h3>
+            
+            {/* Excerpt */}
+            <p className="text-gray-600 mb-4 line-clamp-2 leading-relaxed">
+              {post.excerpt}
+            </p>
+            
+            {/* Meta info */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Badge variant="secondary" className="bg-gray-100 text-gray-700 hover:bg-gray-200 text-xs px-2 py-1">
+                  {post.category}
+                </Badge>
+                <span className="text-sm text-gray-500">
+                  {post.readTime || Math.ceil(post.content.length / 200)} min read
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Button variant="ghost" size="sm" className="p-2 h-8 w-8">
+                  <Bookmark className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="sm" className="p-2 h-8 w-8">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
           </div>
-          <span className="flex items-center gap-1">
-            <MessageCircle className="w-4 h-4" />
-            {post.commentCount}
-          </span>
+          
+          {/* Image */}
+          {post.imageUrl && (
+            <div className="w-32 h-24 flex-shrink-0">
+              <img 
+                src={post.imageUrl} 
+                alt={post.title}
+                className="w-full h-full object-cover rounded"
+              />
+            </div>
+          )}
         </div>
-        
-        <Link to={`/post/${post.id}`}>
-          <Button variant="blog" className="w-full">
-            Read More
-          </Button>
-        </Link>
-      </div>
+      </Link>
     </article>
   );
 };

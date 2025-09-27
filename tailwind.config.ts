@@ -91,6 +91,18 @@ export default {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
+      transitionDuration: {
+        '2000': '2000ms',
+        '3000': '3000ms',
+      },
+      rotate: {
+        'y-0': '0deg',
+        'y-180': '180deg',
+        '-y-180': '-180deg',
+      },
+      perspective: {
+        '1000': '1000px',
+      },
     },
   },
   plugins: [require("tailwindcss-animate")],

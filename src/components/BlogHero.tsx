@@ -1,50 +1,66 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import heroImage from "@/assets/blog-hero.jpg";
 
 interface BlogHeroProps {
   onSearch: (query: string) => void;
+  onGetStarted?: () => void;
 }
 
-export const BlogHero = ({ onSearch }: BlogHeroProps) => {
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const query = formData.get("search") as string;
-    onSearch(query);
-  };
-
+export const BlogHero = ({ onGetStarted }: BlogHeroProps) => {
   return (
-    <section className="relative overflow-hidden">
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${heroImage})` }}
-      />
-      <div className="absolute inset-0 gradient-hero opacity-90" />
-      
-      <div className="relative z-10 container mx-auto px-4 py-20 text-center">
-        <h1 className="blog-title text-white mb-6">
-          Knowledge Hub
+    <section className="relative bg-white border-b border-gray-200">
+      <div className="max-w-4xl mx-auto px-6 py-20 text-center">
+        <h1 className="text-6xl md:text-7xl font-serif text-gray-900 mb-8 leading-tight">
+          Welcome to
+          <br />
+          IndoGyaan
         </h1>
-        <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto blog-content">
-          Discover insights, tutorials, and stories from our community of learners and educators.
+        
+        <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto leading-relaxed">
+          Discover the perfect blend of ancient wisdom and modern insights through thoughtful blogs and meaningful conversations.
         </p>
         
-        <form onSubmit={handleSearch} className="max-w-md mx-auto mb-8">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <Input
-              name="search"
-              placeholder="Search articles..."
-              className="pl-10 pr-4 py-3 text-lg bg-white/95 border-0 focus:bg-white transition-all duration-300"
-            />
-          </div>
-        </form>
+        <div className="mb-16">
+          <Button 
+            onClick={onGetStarted}
+            size="lg" 
+            className="bg-black hover:bg-gray-800 text-white px-12 py-4 text-lg rounded-full font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+          >
+            Start Your Journey
+          </Button>
+        </div>
         
-        <Button variant="hero" size="lg" className="px-8 py-4 text-lg">
-          Explore Articles
-        </Button>
+        {/* Simple features highlight */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto text-left">
+          <div className="text-center">
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Learn</h3>
+            <p className="text-gray-600">Explore diverse topics from culture to contemporary issues</p>
+          </div>
+          
+          <div className="text-center">
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Share</h3>
+            <p className="text-gray-600">Contribute your knowledge, experiences, and perspectives</p>
+          </div>
+          
+          <div className="text-center">
+            <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Grow</h3>
+            <p className="text-gray-600">Build wisdom through meaningful discussions and insights</p>
+          </div>
+        </div>
       </div>
     </section>
   );
