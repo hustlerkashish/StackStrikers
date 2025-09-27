@@ -42,9 +42,22 @@ export const LandingPage: React.FC = () => {
 
   return (
     <>
-      <div className="indo-hero indo-lotus-pattern">
+      <div 
+        className="indo-hero" 
+        style={{
+          backgroundImage: `
+            linear-gradient(135deg, rgba(255, 255, 255, 0.92) 0%, rgba(251, 248, 245, 0.88) 100%),
+            url('https://images.unsplash.com/photo-1552832230-c0197dd311b5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1996&q=80')
+          `,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          minHeight: '100vh',
+          position: 'relative'
+        }}
+      >
         {/* Navigation */}
-        <nav className="bg-white/90 backdrop-blur-sm border-b border-indo-primary/20 sticky top-0 z-50">
+        <nav className="bg-white/98 border-b border-indo-primary/20 sticky top-0 z-50 shadow-sm">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center gap-2">
@@ -84,9 +97,9 @@ export const LandingPage: React.FC = () => {
         </nav>
 
         {/* Hero Section */}
-        <section className="container mx-auto px-4 py-20">
+        <section className="container mx-auto px-4 py-20 relative z-10">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
+            <div className="space-y-8 relative z-20">
               <div className="space-y-4">
                 <Badge className="bg-indo-primary/10 text-indo-primary border-indo-primary/20">
                   <Sparkles className="w-4 h-4 mr-2" />

@@ -29,6 +29,8 @@ interface CommentSystemProps {
 }
 
 export const CommentSystem = ({ postId, comments, onAddComment }: CommentSystemProps) => {
+  // Ensure comments is always an array
+  const safeComments = Array.isArray(comments) ? comments : [];
   const { user } = useAuth();
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -156,13 +158,13 @@ export const CommentSystem = ({ postId, comments, onAddComment }: CommentSystemP
 
       {/* Comments List */}
       <div className="space-y-6">
-        {comments.length === 0 ? (
+        {safeComments.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
             <MessageCircle className="w-12 h-12 mx-auto mb-3 opacity-50" />
             <p>No comments yet. Be the first to share your thoughts!</p>
           </div>
         ) : (
-          comments.map((comment) => (
+          safeComments.map((comment) => (
             <Card key={comment.id} className="p-6 shadow-comment">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">

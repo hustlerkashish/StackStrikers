@@ -51,6 +51,8 @@ const BlogPage = () => {
       try {
         setIsLoading(true);
         const allPosts = await getPosts(50, 0, true);
+        console.log('Loaded posts:', allPosts);
+        console.log('First post ID:', allPosts[0]?.id);
         setPosts(allPosts);
         setFilteredPosts(allPosts);
       } catch (error) {

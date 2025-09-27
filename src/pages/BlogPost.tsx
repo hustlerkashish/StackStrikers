@@ -29,16 +29,19 @@ export default function BlogPost() {
       
       try {
         setLoading(true);
-        const foundPost = getPostById(id);
-        const postComments = getCommentsByPostId(id);
+        const foundPost = await getPostById(id);
+        const postComments = await getCommentsByPostId(id);
+        
+        console.log('Loaded post:', foundPost);
+        console.log('Post author:', foundPost?.author);
         
         setPost(foundPost || null);
-        setComments(postComments);
+        setComments(postComments || []);
         
         if (foundPost) {
-          setIsLiked(user ? foundPost.likes.includes(user.id) : false);
-          setLikeCount(foundPost.likes.length);
-          setShareCount(foundPost.shares);
+          setIsLiked(user ? (foundPost.likes || []).includes(user.id) : false);
+          setLikeCount((foundPost.likes || []).length);
+          setShareCount(foundPost.shares || 0);
         }
       } catch (error) {
         console.error('Failed to load post:', error);
@@ -204,20 +207,20 @@ export default function BlogPost() {
             <div className="flex items-center gap-6 text-muted-foreground mb-6">
               <div className="flex items-center gap-2">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={post.author.avatar} alt={post.author.name} />
+                  <AvatarImage src={post.author?.avatar} alt={post.author?.name || 'Unknown Author'} />
                   <AvatarFallback>
-                    {post.author.name.split(' ').map(n => n[0]).join('')}
+                    {post.author?.name ? post.author.name.split(' ').map(n => n[0]).join('') : 'U'}
                   </AvatarFallback>
                 </Avatar>
-                <span>{post.author.name}</span>
+                <span>{post.author?.name || 'Unknown Author'}</span>
               </div>
               <span className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                {new Date(post.publishedAt).toLocaleDateString('en-US', {
+                {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
                   day: 'numeric'
-                })}
+                }) : 'Date not available'}
               </span>
               <span className="flex items-center gap-2">
                 <MessageCircle className="w-4 h-4" />
@@ -261,7 +264,7 @@ export default function BlogPost() {
 
           {/* Post Content */}
           <div className="prose prose-lg max-w-none mb-12 blog-content text-foreground">
-            {post.content.split('\n').map((paragraph, index) => {
+            {(post.content || '').split('\n').map((paragraph, index) => {
               if (paragraph.startsWith('# ')) {
                 return <h1 key={index} className="blog-title mt-8 mb-4">{paragraph.substring(2)}</h1>;
               }

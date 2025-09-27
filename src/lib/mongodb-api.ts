@@ -35,13 +35,21 @@ class MongoDBAPIService {
       headers.Authorization = `Bearer ${this.token}`;
     }
 
+    console.log('Making request to:', url);
+    console.log('Request options:', { method: options.method || 'GET', headers, body: options.body });
+
     const response = await fetch(url, {
-      ...options,
+      method: options.method || 'GET',
       headers,
+      body: options.body,
     });
+
+    console.log('Response status:', response.status);
+    console.log('Response headers:', response.headers);
 
     if (!response.ok) {
       const error = await response.json();
+      console.error('Request failed:', error);
       throw new Error(error.error || 'Request failed');
     }
 

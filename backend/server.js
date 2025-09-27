@@ -155,12 +155,16 @@ app.post('/api/auth/register', async (req, res) => {
 
     res.status(201).json({
       user: {
-        id: user._id,
+        id: user._id.toString(),
         name: user.name,
         email: user.email,
         bio: user.bio,
         avatar: user.avatar,
-        role: user.role
+        role: user.role,
+        followers: user.followers || [],
+        following: user.following || [],
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
       },
       token
     });
@@ -171,11 +175,18 @@ app.post('/api/auth/register', async (req, res) => {
 
 app.post('/api/auth/login', async (req, res) => {
   try {
+    console.log('Login request body:', req.body);
     const { email, password } = req.body;
+
+    if (!email || !password) {
+      console.log('Missing email or password');
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
 
     // Find user
     const user = await User.findOne({ email });
     if (!user) {
+      console.log('User not found for email:', email);
       return res.status(400).json({ error: 'Invalid credentials' });
     }
 
@@ -190,12 +201,16 @@ app.post('/api/auth/login', async (req, res) => {
 
     res.json({
       user: {
-        id: user._id,
+        id: user._id.toString(),
         name: user.name,
         email: user.email,
         bio: user.bio,
         avatar: user.avatar,
-        role: user.role
+        role: user.role,
+        followers: user.followers || [],
+        following: user.following || [],
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt
       },
       token
     });
@@ -211,7 +226,13 @@ app.get('/api/users/me', authenticateToken, async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    res.json(user);
+    // Transform _id to id for frontend compatibility
+    const transformedUser = {
+      ...user.toObject(),
+      id: user._id.toString(),
+      _id: undefined
+    };
+    res.json(transformedUser);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -220,7 +241,13 @@ app.get('/api/users/me', authenticateToken, async (req, res) => {
 app.get('/api/users', async (req, res) => {
   try {
     const users = await User.find({}, { password: 0 });
-    res.json(users);
+    // Transform _id to id for frontend compatibility
+    const transformedUsers = users.map(user => ({
+      ...user.toObject(),
+      id: user._id.toString(),
+      _id: undefined
+    }));
+    res.json(transformedUsers);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -232,7 +259,13 @@ app.get('/api/users/:id', authenticateToken, async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    res.json(user);
+    // Transform _id to id for frontend compatibility
+    const transformedUser = {
+      ...user.toObject(),
+      id: user._id.toString(),
+      _id: undefined
+    };
+    res.json(transformedUser);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -251,7 +284,13 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
     
-    res.json(user);
+    // Transform _id to id for frontend compatibility
+    const transformedUser = {
+      ...user.toObject(),
+      id: user._id.toString(),
+      _id: undefined
+    };
+    res.json(transformedUser);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -290,7 +329,19 @@ app.get('/api/posts', async (req, res) => {
       .limit(parseInt(limit))
       .skip(parseInt(offset));
 
-    res.json(posts);
+    // Transform _id to id for frontend compatibility
+    const transformedPosts = posts.map(post => ({
+      ...post.toObject(),
+      id: post._id.toString(),
+      _id: undefined,
+      authorId: post.authorId?._id?.toString() || post.authorId?.toString() || null,
+      author: post.authorId ? {
+        ...post.author,
+        id: post.authorId._id?.toString() || post.authorId.toString()
+      } : null
+    }));
+
+    res.json(transformedPosts);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -305,7 +356,19 @@ app.get('/api/posts/:id', async (req, res) => {
       return res.status(404).json({ error: 'Post not found' });
     }
     
-    res.json(post);
+    // Transform _id to id for frontend compatibility
+    const transformedPost = {
+      ...post.toObject(),
+      id: post._id.toString(),
+      _id: undefined,
+      authorId: post.authorId?._id?.toString() || post.authorId?.toString() || null,
+      author: post.authorId ? {
+        ...post.author,
+        id: post.authorId._id?.toString() || post.authorId.toString()
+      } : null
+    };
+    
+    res.json(transformedPost);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -331,7 +394,20 @@ app.post('/api/posts', authenticateToken, async (req, res) => {
     });
 
     await post.save();
-    res.status(201).json(post);
+    
+    // Transform _id to id for frontend compatibility
+    const transformedPost = {
+      ...post.toObject(),
+      id: post._id.toString(),
+      _id: undefined,
+      authorId: post.authorId?.toString() || null,
+      author: post.author ? {
+        ...post.author,
+        id: post.authorId?.toString() || null
+      } : null
+    };
+    
+    res.status(201).json(transformedPost);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

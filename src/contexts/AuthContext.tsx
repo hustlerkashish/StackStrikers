@@ -41,6 +41,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // Check for existing token on app load
     const checkAuth = async () => {
       const storedToken = localStorage.getItem('token');
+      console.log('Checking auth with token:', storedToken ? 'Token exists' : 'No token');
+      
       if (storedToken) {
         try {
           // Set token in API service
@@ -53,15 +55,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
           });
           
+          console.log('Auth check response status:', response.status);
+          
           if (response.ok) {
             const userData = await response.json();
+            console.log('User data loaded:', userData);
             setUser(userData);
             setToken(storedToken);
           } else {
+            console.log('Token invalid, removing from storage');
             localStorage.removeItem('token');
             mongoAPI.setToken(null);
           }
         } catch (error) {
+          console.error('Auth check error:', error);
           localStorage.removeItem('token');
           mongoAPI.setToken(null);
         }
@@ -75,12 +82,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (credentials: LoginRequest) => {
     try {
       setIsLoading(true);
+      console.log('Attempting login for:', credentials.email);
+      console.log('Login credentials:', credentials);
       const response = await loginUser(credentials);
+      console.log('Login successful, user:', response.user);
       setUser(response.user);
       setToken(response.token);
       localStorage.setItem('token', response.token);
       mongoAPI.setToken(response.token);
+      console.log('Token stored in localStorage');
     } catch (error) {
+      console.error('Login error:', error);
+      console.error('Error details:', error);
       throw error;
     } finally {
       setIsLoading(false);

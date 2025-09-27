@@ -49,11 +49,25 @@ export const BlogCard = ({ post, viewMode = 'grid' }: BlogCardProps) => {
       return;
     }
 
+    console.log('Post data in handleLike:', post);
+    console.log('Post ID:', post.id);
+    console.log('User ID:', user.id);
+
+    if (!post.id) {
+      toast({
+        title: 'Error',
+        description: 'Post ID is missing. Cannot like this post.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       const liked = await toggleLike(user.id, post.id);
       setIsLiked(liked);
       setLikeCount(prev => liked ? prev + 1 : prev - 1);
     } catch (error) {
+      console.error('Like error:', error);
       toast({
         title: 'Error',
         description: 'Failed to like post. Please try again.',
@@ -140,20 +154,20 @@ export const BlogCard = ({ post, viewMode = 'grid' }: BlogCardProps) => {
           {post.title}
         </h3>
         
-        <p className="text-muted-foreground mb-4 flex-1 blog-content line-clamp-3">
-          {post.excerpt}
-        </p>
+        <div className="text-muted-foreground mb-4 flex-1 blog-content line-clamp-4">
+          {post.content}
+        </div>
         
         <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Avatar className="h-6 w-6">
-                <AvatarImage src={post.author.avatar} alt={post.author.name} />
+                <AvatarImage src={post.author?.avatar} alt={post.author?.name || 'Unknown Author'} />
                 <AvatarFallback className="text-xs">
-                  {post.author.name.split(' ').map(n => n[0]).join('')}
+                  {post.author?.name ? post.author.name.split(' ').map(n => n[0]).join('') : 'U'}
                 </AvatarFallback>
               </Avatar>
-              <span>{post.author.name}</span>
+              <span>{post.author?.name || 'Unknown Author'}</span>
             </div>
             <span className="flex items-center gap-1">
               <Calendar className="w-4 h-4" />

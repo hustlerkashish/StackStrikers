@@ -17,6 +17,7 @@ import Admin from "./pages/Admin";
 import AdminPanel from "./pages/AdminPanel";
 import MyPosts from "./pages/MyPosts";
 import { ProfilePage } from "./components/profile/ProfilePage";
+import Team from "./pages/Team";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/admin-panel" element={<AdminPanel />} />
             <Route path="/my-posts" element={<MyPosts />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/team" element={<Team />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
