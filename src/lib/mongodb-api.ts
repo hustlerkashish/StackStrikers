@@ -32,7 +32,7 @@ class MongoDBAPIService {
     };
 
     if (this.token) {
-      headers.Authorization = `Bearer ${this.token}`;
+      headers['authorization'] = `Bearer ${this.token}`;
     }
 
     console.log('Making request to:', url);
