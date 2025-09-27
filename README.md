@@ -119,10 +119,8 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 ## API Services
-
 ### Blog Service
 Location: `src/lib/blog-service.ts`
-
 Key functionalities:
 - Post CRUD operations
 - Category management
