@@ -2,34 +2,70 @@ import { useParams, Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CommentSystem, Comment } from "@/components/CommentSystem";
 import { Navigation } from "@/components/Navigation";
 import { BlogPost as BlogPostType } from "@/components/BlogCard";
-import { getPostById, getCommentsByPostId, addComment } from "@/data/mockData";
-import { ArrowLeft, Calendar, User, MessageCircle } from "lucide-react";
+import { getPostById, getCommentsByPostId, createComment } from "@/lib/database";
+import { ArrowLeft, Calendar, User, MessageCircle, Heart, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { toggleLike, sharePost } from "@/lib/database";
 
 export default function BlogPost() {
   const { id } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const [post, setPost] = useState<BlogPostType | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [shareCount, setShareCount] = useState(0);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (id) {
-      const foundPost = getPostById(id);
-      const postComments = getCommentsByPostId(id);
+    const loadPost = async () => {
+      if (!id) return;
       
-      setPost(foundPost || null);
-      setComments(postComments);
-      setLoading(false);
-    }
-  }, [id]);
+      try {
+        setLoading(true);
+        const foundPost = getPostById(id);
+        const postComments = getCommentsByPostId(id);
+        
+        setPost(foundPost || null);
+        setComments(postComments);
+        
+        if (foundPost) {
+          setIsLiked(user ? foundPost.likes.includes(user.id) : false);
+          setLikeCount(foundPost.likes.length);
+          setShareCount(foundPost.shares);
+        }
+      } catch (error) {
+        console.error('Failed to load post:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load the blog post. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleAddComment = async (commentData: Omit<Comment, "id" | "createdAt">) => {
+    loadPost();
+  }, [id, user, toast]);
+
+  const handleAddComment = async (commentData: Omit<Comment, "id" | "createdAt" | "likes">) => {
     try {
-      const newComment = addComment(commentData);
+      if (!user) {
+        throw new Error('Authentication required');
+      }
+      
+      const newComment = await createComment({
+        content: commentData.content,
+        postId: commentData.postId,
+      }, user.id);
+      
       setComments(prev => [...prev, newComment]);
       
       if (post) {
@@ -37,6 +73,63 @@ export default function BlogPost() {
       }
     } catch (error) {
       throw error; // Re-throw to let CommentSystem handle the error
+    }
+  };
+
+  const handleLike = async () => {
+    if (!user) {
+      toast({
+        title: 'Authentication required',
+        description: 'Please log in to like posts.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      const liked = await toggleLike(user.id, post?.id);
+      setIsLiked(liked);
+      setLikeCount(prev => liked ? prev + 1 : prev - 1);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to like post. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleShare = async (platform: 'twitter' | 'facebook' | 'linkedin' | 'copy') => {
+    if (!user) {
+      toast({
+        title: 'Authentication required',
+        description: 'Please log in to share posts.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      if (platform === 'copy') {
+        await navigator.clipboard.writeText(window.location.href);
+        toast({
+          title: 'Link copied!',
+          description: 'Post link has been copied to clipboard.',
+        });
+      } else {
+        await sharePost(user.id, post!.id, platform);
+        setShareCount(prev => prev + 1);
+        toast({
+          title: 'Shared!',
+          description: `Post shared on ${platform}.`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to share post. Please try again.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -108,11 +201,16 @@ export default function BlogPost() {
               {post.title}
             </h1>
             
-            <div className="flex items-center gap-6 text-muted-foreground">
-              <span className="flex items-center gap-2">
-                <User className="w-4 h-4" />
-                {post.author}
-              </span>
+            <div className="flex items-center gap-6 text-muted-foreground mb-6">
+              <div className="flex items-center gap-2">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={post.author.avatar} alt={post.author.name} />
+                  <AvatarFallback>
+                    {post.author.name.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+                <span>{post.author.name}</span>
+              </div>
               <span className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
                 {new Date(post.publishedAt).toLocaleDateString('en-US', {
@@ -125,6 +223,28 @@ export default function BlogPost() {
                 <MessageCircle className="w-4 h-4" />
                 {post.commentCount} comments
               </span>
+            </div>
+            
+            {/* Like and Share Buttons */}
+            <div className="flex items-center gap-4 mb-8">
+              <Button
+                variant={isLiked ? "default" : "outline"}
+                size="sm"
+                onClick={handleLike}
+                className="flex items-center gap-2"
+              >
+                <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
+                {likeCount}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleShare('copy')}
+                className="flex items-center gap-2"
+              >
+                <Share2 className="h-4 w-4" />
+                Share
+              </Button>
             </div>
           </header>
 

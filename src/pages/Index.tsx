@@ -4,7 +4,7 @@ import { BlogCard, BlogPost } from "@/components/BlogCard";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { Navigation } from "@/components/Navigation";
 import { Input } from "@/components/ui/input";
-import { mockPosts, categories } from "@/data/mockData";
+import { getPosts, searchPosts, getPostsByCategory } from "@/lib/database";
 import { Search } from "lucide-react";
 
 const Index = () => {
@@ -12,33 +12,59 @@ const Index = () => {
   const [filteredPosts, setFilteredPosts] = useState<BlogPost[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  const categories = [
+    'Philosophy',
+    'Technology', 
+    'Culture',
+    'Spirituality',
+    'Education',
+    'Art',
+    'Science',
+    'General'
+  ];
 
   useEffect(() => {
-    setPosts([...mockPosts]);
-    setFilteredPosts([...mockPosts]);
+    const loadPosts = async () => {
+      try {
+        setIsLoading(true);
+        const allPosts = await getPosts(50, 0, true);
+        setPosts(allPosts);
+        setFilteredPosts(allPosts);
+      } catch (error) {
+        console.error('Failed to load posts:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPosts();
   }, []);
 
   useEffect(() => {
-    let filtered = [...posts];
+    const filterPosts = async () => {
+      try {
+        let filtered = Array.isArray(posts) ? [...posts] : [];
 
-    // Filter by category
-    if (selectedCategory) {
-      filtered = filtered.filter(post => post.category === selectedCategory);
-    }
+        // Filter by category
+        if (selectedCategory) {
+          filtered = await getPostsByCategory(selectedCategory, 50);
+        }
 
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(post => 
-        post.title.toLowerCase().includes(query) ||
-        post.excerpt.toLowerCase().includes(query) ||
-        post.author.toLowerCase().includes(query) ||
-        post.category.toLowerCase().includes(query) ||
-        post.content.toLowerCase().includes(query)
-      );
-    }
+        // Filter by search query
+        if (searchQuery.trim()) {
+          filtered = await searchPosts(searchQuery, 50);
+        }
 
-    setFilteredPosts(filtered);
+        setFilteredPosts(filtered);
+      } catch (error) {
+        console.error('Failed to filter posts:', error);
+        setFilteredPosts(posts);
+      }
+    };
+
+    filterPosts();
   }, [posts, selectedCategory, searchQuery]);
 
   const handleSearch = (query: string) => {
@@ -50,7 +76,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-indo-background">
       <Navigation />
       
       {/* Hero Section */}
@@ -96,7 +122,15 @@ const Index = () => {
 
         {/* Blog Posts Grid */}
         <section>
-          {filteredPosts.length === 0 ? (
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <Search className="w-8 h-8 text-muted-foreground animate-pulse" />
+              </div>
+              <h3 className="section-title text-foreground mb-2">Loading posts...</h3>
+              <p className="text-muted-foreground">Please wait while we fetch the latest articles</p>
+            </div>
+          ) : filteredPosts.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                 <Search className="w-8 h-8 text-muted-foreground" />
@@ -124,7 +158,7 @@ const Index = () => {
             <h2 className="section-title text-center mb-8">Explore by Category</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
               {categories.map((category) => {
-                const postsInCategory = posts.filter(post => post.category === category).length;
+                const postsInCategory = Array.isArray(posts) ? posts.filter(post => post.category === category).length : 0;
                 return (
                   <button
                     key={category}

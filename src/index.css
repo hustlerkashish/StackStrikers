@@ -2,6 +2,107 @@
 @tailwind components;
 @tailwind utilities;
 
+/* IndoGyaan Custom Color Palette */
+:root {
+  --deep-saffron: #FF9933;
+  --indigo-blue: #1A237E;
+  --ivory-white: #FAF9F6;
+  --lotus-pink: #E91E63;
+  --saffron-light: #FFB366;
+  --indigo-light: #3F51B5;
+  --ivory-dark: #F5F3F0;
+}
+
+/* Custom CSS Variables for IndoGyaan Theme */
+.bg-indo-primary {
+  background-color: var(--deep-saffron);
+}
+
+.bg-indo-secondary {
+  background-color: var(--indigo-blue);
+}
+
+.bg-indo-accent {
+  background-color: var(--lotus-pink);
+}
+
+.bg-indo-background {
+  background-color: var(--ivory-white);
+}
+
+.text-indo-primary {
+  color: var(--deep-saffron);
+}
+
+.text-indo-secondary {
+  color: var(--indigo-blue);
+}
+
+.text-indo-accent {
+  color: var(--lotus-pink);
+}
+
+.border-indo-primary {
+  border-color: var(--deep-saffron);
+}
+
+.border-indo-secondary {
+  border-color: var(--indigo-blue);
+}
+
+/* IndoGyaan Landing Page Styles */
+.indo-hero {
+  background: linear-gradient(135deg, var(--ivory-white) 0%, var(--ivory-dark) 100%);
+  min-height: 100vh;
+}
+
+.indo-lotus-pattern {
+  background-image: 
+    radial-gradient(circle at 20% 80%, var(--lotus-pink) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, var(--deep-saffron) 0%, transparent 50%),
+    radial-gradient(circle at 40% 40%, var(--indigo-blue) 0%, transparent 50%);
+  background-size: 300px 300px, 200px 200px, 400px 400px;
+  background-position: 0 0, 100px 100px, 200px 200px;
+}
+
+.indo-text-gradient {
+  background: linear-gradient(135deg, var(--deep-saffron) 0%, var(--indigo-blue) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.indo-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 153, 51, 0.2);
+  box-shadow: 0 8px 32px rgba(26, 35, 126, 0.1);
+}
+
+.indo-button-primary {
+  background: linear-gradient(135deg, var(--deep-saffron) 0%, var(--saffron-light) 100%);
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.indo-button-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 153, 51, 0.3);
+}
+
+.indo-button-secondary {
+  background: linear-gradient(135deg, var(--indigo-blue) 0%, var(--indigo-light) 100%);
+  color: white;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.indo-button-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(26, 35, 126, 0.3);
+}
+
 /* Blog Platform Design System - Modern, professional typography-focused design */
 
 @layer base {
